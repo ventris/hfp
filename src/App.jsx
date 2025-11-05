@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './App.css';
 
 const initialDimensions = () => {
@@ -17,6 +17,7 @@ export default function App() {
   const [userAgent, setUserAgent] = useState(() =>
     typeof navigator === 'undefined' ? 'Unavailable' : navigator.userAgent,
   );
+  const hasReported = useRef(false);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -37,6 +38,40 @@ export default function App() {
       setUserAgent(navigator.userAgent);
     }
   }, []);
+
+  useEffect(() => {
+    if (hasReported.current) {
+      return;
+    }
+
+    if (!dimensions.width || !dimensions.height) {
+      return;
+    }
+
+    if (import.meta.env.DEV) {
+      hasReported.current = true;
+      return;
+    }
+
+    hasReported.current = true;
+
+    fetch('/api/visit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        width: dimensions.width,
+        height: dimensions.height,
+        userAgent,
+      }),
+    })
+      .catch((error) => {
+        if (import.meta.env.DEV) {
+          console.warn('Failed to report visit', error);
+        }
+      });
+  }, [dimensions.width, dimensions.height, userAgent]);
 
   return (
     <div className="fingerprint-container">
