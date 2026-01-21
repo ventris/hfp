@@ -24,9 +24,14 @@ const logVisit = ({
   note = 'n/a',
   cssFingerprint = 'n/a',
   webDriver = 'n/a',
+  uaValidation = null,
 }) => {
   const requestUserAgent = req.get('user-agent') ?? 'unknown';
   const ip = getClientIp(req);
+
+  const uaValidationStr = uaValidation
+    ? `browser=${uaValidation.browser} version=${uaValidation.claimedVersion} valid=${uaValidation.valid} mismatches=${uaValidation.mismatches?.length ?? 0}`
+    : 'n/a';
 
   console.log(
     `[visit]
@@ -34,8 +39,13 @@ const logVisit = ({
       width=${width} height=${height}
       reportedUA=${reportedUserAgent} requestUA=${requestUserAgent}
       cssFingerprint=${cssFingerprint}
-      webdriver=${webDriver}`, // For automation tools like Selenium
+      webdriver=${webDriver}
+      uaValidation: ${uaValidationStr}`,
   );
+
+  if (uaValidation?.mismatches?.length > 0) {
+    console.log(`  [SPOOFING DETECTED] Mismatched features: ${uaValidation.mismatches.map(m => m.feature).join(', ')}`);
+  }
 };
 
 app.use((req, _res, next) => {
@@ -60,7 +70,7 @@ app.use((req, _res, next) => {
 });
 
 app.post('/api/visit', (req, res) => {
-  const { width, height, userAgent: reportedUserAgent, cssFingerprint, webDriver } = req.body ?? {};
+  const { width, height, userAgent: reportedUserAgent, cssFingerprint, webDriver, uaValidation } = req.body ?? {};
 
   logVisit({
     req,
@@ -70,6 +80,7 @@ app.post('/api/visit', (req, res) => {
     note: 'client-metrics',
     cssFingerprint: cssFingerprint ?? 'n/a',
     webDriver: webDriver ?? 'n/a',
+    uaValidation: uaValidation ?? null,
   });
 
   res.sendStatus(204);
