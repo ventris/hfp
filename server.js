@@ -16,6 +16,57 @@ const getClientIp = (req) => {
   return forwardedFor?.split(',')[0]?.trim() || remoteAddress || 'unknown';
 };
 
+function mouseEntropy(events, options = {}) {
+  if (!Array.isArray(events) || events.length < 2) {
+    return { distanceEntropy: 0, timeEntropy: 0 };
+  }
+
+  const {
+    distanceBinSize = 5,  // pixels per bin
+    timeBinSize = 20      // ms per bin
+  } = options;
+
+  const distances = [];
+  const times = [];
+
+  // Compute deltas
+  for (let i = 1; i < events.length; i++) {
+    const dx = events[i].x - events[i - 1].x;
+    const dy = events[i].y - events[i - 1].y;
+    const dt = events[i].timestamp - events[i - 1].timestamp;
+
+    distances.push(Math.sqrt(dx * dx + dy * dy));
+    times.push(dt);
+  }
+
+  // Helper: compute Shannon entropy of binned values
+  function entropy(values, binSize) {
+    if (values.length === 0) return 0;
+
+    const bins = new Map();
+
+    for (const v of values) {
+      const bin = Math.floor(v / binSize);
+      bins.set(bin, (bins.get(bin) || 0) + 1);
+    }
+
+    const total = values.length;
+    let H = 0;
+
+    for (const count of bins.values()) {
+      const p = count / total;
+      H -= p * Math.log2(p);
+    }
+
+    return H;
+  }
+
+  return {
+    distanceEntropy: entropy(distances, distanceBinSize),
+    timeEntropy: entropy(times, timeBinSize)
+  };
+}
+
 const logVisit = ({
   req,
   width = 'n/a',
@@ -62,6 +113,9 @@ app.post('/api/visit', (req, res) => {
     reportedUserAgent: reportedUserAgent ?? 'n/a',
     note: 'client-metrics',
   });
+
+  // console.log(req.body)
+  console.log(mouseEntropy(req.body.mouseMoves))
 
   res.sendStatus(204);
 });
