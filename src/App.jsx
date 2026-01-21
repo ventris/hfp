@@ -2,12 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import './App.css';
 
 export default function App() {
-  const [dimensions, setDimensions] = useState(initialDimensions);
-  const [userAgent, setUserAgent] = useState(() =>
-    typeof navigator === 'undefined' ? 'Unavailable' : navigator.userAgent,
-  );
-  const hasReported = useRef(false);
-
   const data = useRef({
     "loaded_at": performance.timeOrigin + performance.now(),
     "user_agent": navigator.userAgent,
@@ -36,12 +30,12 @@ export default function App() {
   // Capture window size changes
   useEffect(() => {
     const updateDimensions = () => {
-      if (typeof window === 'undefined') {
-        const width = 0;
-        const height = 0;
-      } else {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+      var width = 0;
+      var height = 0;
+
+      if (typeof window !== 'undefined') {
+        width = window.innerWidth;
+        height = window.innerHeight;
       }
 
       data.current.window_size.push({
