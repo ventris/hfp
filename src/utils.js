@@ -1,26 +1,13 @@
-export const isBot = () => {
+export const isBot = (userAgent) => {
   const gl = document.createElement("canvas").getContext("webgl");
   const vendor = gl?.getParameter(gl.VENDOR);
   const renderer = gl?.getParameter(gl.RENDERER);
 
-  const cssFeatures = [
-    "display: grid",
-    "display: flex",
-    "backdrop-filter: blur(1px)",
-    "position: sticky",
-    "gap: 1px",
-    "aspect-ratio: 1",
-    "container-type: inline-size",
-    "color: oklch(0 0 0)",
-    "accent-color: red",
-    "text-wrap: balance",
-    "view-transition-name: x",
-  ];
-
-  const fingerprintValue = cssFeatures.map((f) => !CSS.supports(f));
+  const validation = validateUserAgent(userAgent);
 
   const highPriorityFlags = [
-    ...fingerprintValue,
+    !CSS.supports("display: grid"),
+    validation.mismatches.length > 0,
     Boolean(window._phantom),
     Boolean(window.callPhantom),
     Boolean(window.__nightmare),

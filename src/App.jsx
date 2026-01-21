@@ -22,7 +22,7 @@ export default function App() {
     typeof navigator === "undefined" ? "Unavailable" : navigator.userAgent,
   );
   const hasReported = useRef(false);
-  const { score, botProbability } = isBot();
+  const { score, botProbability } = isBot(userAgent);
 
   useEffect(() => {
     const updateDimensions = () => {
