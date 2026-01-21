@@ -3,7 +3,24 @@ export const isBot = () => {
   const vendor = gl?.getParameter(gl.VENDOR);
   const renderer = gl?.getParameter(gl.RENDERER);
 
+  const cssFeatures = [
+    "display: grid",
+    "display: flex",
+    "backdrop-filter: blur(1px)",
+    "position: sticky",
+    "gap: 1px",
+    "aspect-ratio: 1",
+    "container-type: inline-size",
+    "color: oklch(0 0 0)",
+    "accent-color: red",
+    "text-wrap: balance",
+    "view-transition-name: x",
+  ];
+
+  const fingerprintValue = cssFeatures.map((f) => !CSS.supports(f));
+
   const highPriorityFlags = [
+    ...fingerprintValue,
     Boolean(window._phantom),
     Boolean(window.callPhantom),
     Boolean(window.__nightmare),
@@ -76,3 +93,57 @@ export const isBot = () => {
     botProbability,
   };
 };
+
+// Browser-specific CSS features with minimum version requirements
+// These features help detect if the claimed User-Agent matches actual browser capabilities
+const browserFeatures = {
+  chrome: [
+    // https://caniuse.com/css-text-box-trim
+    { feature: "text-box-trim: trim-start", minVersion: 133 },
+  ],
+  firefox: [{ feature: "text-wrap: balance", minVersion: 121 }],
+};
+
+function detectBrowserFromUA(ua) {
+  if (/Chrome\/(\d+)/.test(ua)) {
+    return { browser: "chrome", version: parseInt(RegExp.$1, 10) };
+  }
+  if (/Firefox\/(\d+)/.test(ua)) {
+    return { browser: "firefox", version: parseInt(RegExp.$1, 10) };
+  }
+  return { browser: "unknown", version: 0 };
+}
+
+export function validateUserAgent(ua) {
+  const { browser, version } = detectBrowserFromUA(ua);
+
+  if (browser === "unknown") {
+    return {
+      browser,
+      claimedVersion: version,
+      valid: null,
+      mismatches: [],
+      reason: "unknown browser",
+    };
+  }
+
+  const features = browserFeatures[browser] || [];
+  const mismatches = [];
+
+  for (const { feature, minVersion } of features) {
+    const shouldSupport = version >= minVersion;
+    const actuallySupports = CSS.supports(feature);
+
+    // If UA claims a version that should support the feature, but it doesn't
+    if (shouldSupport && !actuallySupports) {
+      mismatches.push({ feature, minVersion, expected: true, actual: false });
+    }
+  }
+
+  return {
+    browser,
+    claimedVersion: version,
+    valid: mismatches.length === 0,
+    mismatches,
+  };
+}

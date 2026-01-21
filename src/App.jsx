@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
-import { isBot } from "./utils";
+import { isBot, validateUserAgent } from "./utils";
 import BotScoreBar from "./BotScoreBar";
 import botMeme from "./assets/botMeme.png";
 import noBotMeme from "./assets/notBotMeme.jpg";
@@ -79,8 +79,61 @@ export default function App() {
     });
   }, [dimensions.width, dimensions.height, userAgent]);
 
+  const uaValidation = validateUserAgent(userAgent);
+
   return (
     <div className="fingerprint-container">
+      <h2>User Information</h2>
+      <table className="fingerprint-table">
+        <thead>
+          <tr>
+            <th>Key</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>navigator.userAgent</td>
+            <td>{userAgent}</td>
+          </tr>
+          <tr>
+            <td>Detected Browser</td>
+            <td>
+              {uaValidation
+                ? `${uaValidation.browser} v${uaValidation.claimedVersion}`
+                : "Analyzing..."}
+            </td>
+          </tr>
+          <tr>
+            <td>UA Validation</td>
+            <td
+              style={{
+                color:
+                  uaValidation?.valid === false
+                    ? "red"
+                    : uaValidation?.valid === true
+                      ? "green"
+                      : "gray",
+              }}
+            >
+              {uaValidation?.valid === null
+                ? "Unknown browser"
+                : uaValidation?.valid
+                  ? "Valid"
+                  : `Spoofed (${uaValidation?.mismatches?.length} mismatches)`}
+            </td>
+          </tr>
+          {uaValidation?.mismatches?.length > 0 && (
+            <tr>
+              <td>Mismatched Features</td>
+              <td style={{ color: "red", fontSize: "0.85em" }}>
+                {uaValidation.mismatches.map((m) => m.feature).join(", ")}
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
       <div style={{ marginTop: 8 }}>
         <BotScoreBar />
         <img
