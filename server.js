@@ -22,12 +22,19 @@ const logVisit = ({
   height = 'n/a',
   reportedUserAgent = 'n/a',
   note = 'n/a',
+  cssFingerprint = 'n/a',
+  webDriver = 'n/a',
 }) => {
   const requestUserAgent = req.get('user-agent') ?? 'unknown';
   const ip = getClientIp(req);
 
   console.log(
-    `[visit] ip=${ip} width=${width} height=${height} reportedUA=${reportedUserAgent} requestUA=${requestUserAgent} note=${note}`,
+    `[visit]
+      ip=${ip} note=${note}
+      width=${width} height=${height}
+      reportedUA=${reportedUserAgent} requestUA=${requestUserAgent}
+      cssFingerprint=${cssFingerprint}
+      webdriver=${webDriver}`, // For automation tools like Selenium
   );
 };
 
@@ -53,7 +60,7 @@ app.use((req, _res, next) => {
 });
 
 app.post('/api/visit', (req, res) => {
-  const { width, height, userAgent: reportedUserAgent } = req.body ?? {};
+  const { width, height, userAgent: reportedUserAgent, cssFingerprint, webDriver } = req.body ?? {};
 
   logVisit({
     req,
@@ -61,6 +68,8 @@ app.post('/api/visit', (req, res) => {
     height: height ?? 'n/a',
     reportedUserAgent: reportedUserAgent ?? 'n/a',
     note: 'client-metrics',
+    cssFingerprint: cssFingerprint ?? 'n/a',
+    webDriver: webDriver ?? 'n/a',
   });
 
   res.sendStatus(204);

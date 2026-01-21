@@ -18,6 +18,8 @@ export default function App() {
     typeof navigator === 'undefined' ? 'Unavailable' : navigator.userAgent,
   );
   const hasReported = useRef(false);
+  const [cssFingerprint, setCssFingerprint] = useState('');
+  const [webdriver, _] = useState(navigator.webdriver);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -55,6 +57,25 @@ export default function App() {
 
     hasReported.current = true;
 
+    // Also good for spoofing, as if a user claims to have an UA
+    // but the cssFeature returns 0 where that browser should support it then is a red flag.
+    const cssFeatures = [
+      'display: grid',
+      'display: flex',
+      'backdrop-filter: blur(1px)',
+      'position: sticky',
+      'gap: 1px',
+      'aspect-ratio: 1',
+      'container-type: inline-size',
+      'color: oklch(0 0 0)',
+      'accent-color: red',
+      'text-wrap: balance',
+      'view-transition-name: x',
+    ];
+
+    const fingerprintValue = cssFeatures.map(f => CSS.supports(f) ? '1' : '0').join('');
+    setCssFingerprint(fingerprintValue);
+
     fetch('/api/visit', {
       method: 'POST',
       headers: {
@@ -64,6 +85,8 @@ export default function App() {
         width: dimensions.width,
         height: dimensions.height,
         userAgent,
+        cssFingerprint: fingerprintValue,
+        webDriver: webdriver,
       }),
     })
       .catch((error) => {
@@ -71,7 +94,7 @@ export default function App() {
           console.warn('Failed to report visit', error);
         }
       });
-  }, [dimensions.width, dimensions.height, userAgent]);
+  }, [dimensions.width, dimensions.height, userAgent, cssFingerprint, webdriver]);
 
   return (
     <div className="fingerprint-container">
@@ -95,6 +118,14 @@ export default function App() {
           <tr>
             <td>navigator.userAgent</td>
             <td>{userAgent}</td>
+          </tr>
+          <tr>
+            <td>CSS Fingerprint</td>
+            <td>{cssFingerprint}</td>
+          </tr>
+          <tr>
+            <td>navigator.webdriver</td>
+            <td>{String(navigator.webdriver)}</td>
           </tr>
         </tbody>
       </table>
