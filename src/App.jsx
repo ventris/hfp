@@ -19,6 +19,30 @@ export default function App() {
   );
   const hasReported = useRef(false);
 
+  const data = useRef({
+    "loaded_at": performance.timeOrigin + performance.now(),
+    "user_agent": navigator.userAgent,
+  });
+
+  const submitData = () => {
+    data.current.clicked_at = performance.timeOrigin + performance.now();
+    
+    fetch('/api/visit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+      .catch((error) => {
+        if (import.meta.env.DEV) {
+          console.warn('Failed to report visit', error);
+        }
+      });
+
+    alert("Identification complete, awaiting decision")
+  };
+
   useEffect(() => {
     const updateDimensions = () => {
       setDimensions({
@@ -75,29 +99,8 @@ export default function App() {
 
   return (
     <div className="fingerprint-container">
-      <h2>User Information</h2>
-      <table className="fingerprint-table">
-        <thead>
-          <tr>
-            <th>Key</th>
-            <th>Value</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>window.width</td>
-            <td>{dimensions.width}px</td>
-          </tr>
-          <tr>
-            <td>window.height</td>
-            <td>{dimensions.height}px</td>
-          </tr>
-          <tr>
-            <td>navigator.userAgent</td>
-            <td>{userAgent}</td>
-          </tr>
-        </tbody>
-      </table>
+      <h2>User identification in progress</h2>
+      <button onClick={submitData}>I am human</button>
     </div>
   );
 }
